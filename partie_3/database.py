@@ -22,7 +22,7 @@ def init_db():
     """)
     conn.commit()
     conn.close()
-    print("[✓] Base de données initialisée.")
+    print("[OK] Base de donnees initialisee.")
 
 def insert_alert(signed_alert: dict) -> int:
     conn = sqlite3.connect(DB_PATH)

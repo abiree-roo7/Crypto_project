@@ -23,7 +23,7 @@ def generate_keys():
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         ))
-    print("[✓] Clés ECDSA générées.")
+    print("[OK] Cles ECDSA generees.")
 
 def load_private_key():
     with open(f"{KEYS_DIR}/private_key.pem", "rb") as f:

@@ -29,5 +29,5 @@ def export_signed_report(output_path: str = "report.json"):
     with open(output_path, "w") as f:
         json.dump(final, f, indent=2, ensure_ascii=False)
 
-    print(f"[✓] Rapport exporté : {output_path}")
+    print(f"[OK] Rapport exporte : {output_path}")
     return final
