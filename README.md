@@ -6,6 +6,8 @@ This project connects three parts of a TLS intrusion detection workflow:
 2. `partie2_moteursoc`: analyzes TLS sessions and generates security alerts.
 3. `partie_3`: signs alerts, stores them in SQLite, and exports signed reports.
 
+Full technical documentation is available in `DOCUMENTATION.md`.
+
 ## Install
 
 ```bash
