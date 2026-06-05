@@ -1,8 +1,25 @@
 import argparse
+import importlib.util
 import json
 import sqlite3
+import sys
+import sysconfig
 from collections import Counter
 from pathlib import Path
+
+
+def preload_stdlib_code_module():
+    if "code" in sys.modules and hasattr(sys.modules["code"], "InteractiveInterpreter"):
+        return
+
+    stdlib_code = Path(sysconfig.get_path("stdlib")) / "code.py"
+    spec = importlib.util.spec_from_file_location("code", stdlib_code)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sys.modules["code"] = module
+
+
+preload_stdlib_code_module()
 
 from flask import Flask, render_template_string, request
 
@@ -41,6 +58,25 @@ def _normalize_db_alert(row):
     }
 
 
+def normalize_alert(alert):
+    details = alert.get("details", {})
+    if isinstance(details, str):
+        try:
+            details = json.loads(details)
+        except json.JSONDecodeError:
+            details = {"raw": details}
+    elif details is None:
+        details = {}
+
+    return {
+        **alert,
+        "details": details,
+        "alert_type": alert.get("alert_type") or alert.get("rule") or "unknown",
+        "source_ip": alert.get("source_ip") or alert.get("src_ip"),
+        "dest_ip": alert.get("dest_ip") or alert.get("dst_ip"),
+    }
+
+
 def load_alerts():
     source = "none"
     alerts = []
@@ -60,7 +96,7 @@ def load_alerts():
         alerts = [_normalize_db_alert(dict(row)) for row in rows]
         source = "alerts.db"
 
-    return alerts, source
+    return [normalize_alert(alert) for alert in alerts], source
 
 
 def build_stats(alerts):
@@ -312,7 +348,7 @@ TEMPLATE = """
   <header>
     <div class="wrap top">
       <h1>TLS IDS Dashboard</h1>
-      <div class="source">Data source: {{ source }}</div>
+      <div class="source">Data source: {{ data_source }}</div>
     </div>
   </header>
 
@@ -412,7 +448,7 @@ def dashboard():
         TEMPLATE,
         alerts=filtered,
         stats=build_stats(alerts),
-        source=source,
+        data_source=source,
         severity=severity,
         query=query,
     )
