@@ -34,6 +34,12 @@ Sign alerts, store them in SQLite, and export a signed report:
 python code.py --sessions sessions_tls.json --alerts-out alerts.json --store --report-out report.json
 ```
 
+Run the local dashboard:
+
+```bash
+python -m partie_4_dashboard.app
+```
+
 ## Part 2 Features
 
 The detection engine now supports:
