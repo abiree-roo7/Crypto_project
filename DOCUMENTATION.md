@@ -4,6 +4,7 @@ The documentation has been reorganized into focused files under the `docs/` dire
 
 ## Documentation Files
 
+- [Complete Run Guide](docs/run_app_guide.md): full setup, dashboard, CLI, real capture, and troubleshooting guide.
 - [Architecture](docs/architecture.md): explains the four project parts and data flow.
 - [Usage Guide](docs/usage.md): explains how to run the pipeline and dashboard.
 - [Testing Guide](docs/testing.md): explains how to test with sample and real PCAP files.
