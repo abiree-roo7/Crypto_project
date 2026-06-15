@@ -58,6 +58,7 @@ http://127.0.0.1:5000/
 ## Documentation
 
 - [Complete Run Guide](docs/run_app_guide.md)
+- [Video Demo Guide](docs/video_demo_guide.md)
 - [Architecture](docs/architecture.md)
 - [Usage Guide](docs/usage.md)
 - [Testing Guide](docs/testing.md)

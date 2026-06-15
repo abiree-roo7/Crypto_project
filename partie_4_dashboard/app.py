@@ -1,9 +1,12 @@
 import argparse
+import contextlib
 import importlib.util
+import io
 import json
 import sqlite3
 import sys
 import sysconfig
+from datetime import datetime
 from collections import Counter
 from pathlib import Path
 
@@ -30,9 +33,10 @@ SESSIONS_JSON = BASE_DIR / "sessions_tls.json"
 ALERTS_JSON = BASE_DIR / "alerts.json"
 REPORT_JSON = BASE_DIR / "report.json"
 ALERTS_DB = BASE_DIR / "alerts.db"
+PIPELINE_LOG = BASE_DIR / "pipeline_run.log"
 UPLOAD_DIR = BASE_DIR / "uploads"
 ALLOWED_CAPTURE_EXTENSIONS = {".pcap", ".pcapng", ".cap"}
-RUNTIME_OUTPUTS = (SESSIONS_JSON, ALERTS_JSON, REPORT_JSON, ALERTS_DB)
+RUNTIME_OUTPUTS = (SESSIONS_JSON, ALERTS_JSON, REPORT_JSON, ALERTS_DB, PIPELINE_LOG)
 
 app = Flask(__name__)
 app.secret_key = "tls-ids-local-dashboard"
@@ -50,11 +54,28 @@ def run_pipeline_for_capture(capture_path):
     pipeline.preload_stdlib_code_module()
     from part1_extraction.session import sessions_depuis_pcap
 
-    sessions = sessions_depuis_pcap(str(capture_path))
-    pipeline.write_json(SESSIONS_JSON, sessions)
-    alerts = pipeline.detect_alerts(sessions)
-    pipeline.write_json(ALERTS_JSON, alerts)
-    stored_alerts = pipeline.sign_and_store_alerts(alerts, REPORT_JSON)
+    log_buffer = io.StringIO()
+    started_at = datetime.utcnow().isoformat()
+
+    with contextlib.redirect_stdout(log_buffer):
+        print(f"[demo] Started TLS IDS analysis at {started_at} UTC")
+        print(f"[demo] Capture file: {capture_path.name}")
+        print("[step 1] Extracting TLS sessions from packet capture")
+        sessions = sessions_depuis_pcap(str(capture_path))
+        pipeline.write_json(SESSIONS_JSON, sessions)
+        print(f"[step 1] sessions_tls.json written with {len(sessions)} session(s)")
+
+        print("[step 2] Running rule-based TLS detector")
+        alerts = pipeline.detect_alerts(sessions)
+        pipeline.write_json(ALERTS_JSON, alerts)
+        print(f"[step 2] alerts.json written with {len(alerts)} alert(s)")
+
+        print("[step 3] Signing alerts, storing SQLite rows, and exporting report")
+        stored_alerts = pipeline.sign_and_store_alerts(alerts, REPORT_JSON)
+        print(f"[step 3] Stored {len(stored_alerts)} signed alert(s)")
+        print("[done] Dashboard data and downloadable report are ready")
+
+    PIPELINE_LOG.write_text(log_buffer.getvalue(), encoding="utf-8")
     return {
         "sessions": len(sessions),
         "alerts": len(alerts),
@@ -184,6 +205,15 @@ def build_artifact_status():
         "artifacts": artifacts,
         "database_exists": ALERTS_DB.exists(),
     }
+
+
+def load_pipeline_log():
+    if not PIPELINE_LOG.exists():
+        return [
+            "[ready] Upload a Wireshark capture, keep 'Start with a clean report' checked,",
+            "[ready] then select Analyze capture to show the backend pipeline here.",
+        ]
+    return PIPELINE_LOG.read_text(encoding="utf-8", errors="replace").splitlines()
 
 
 def filter_alerts(alerts, severity, query):
@@ -562,6 +592,7 @@ def dashboard():
         alerts=filtered,
         stats=build_stats(alerts),
         artifacts=build_artifact_status(),
+        run_log=load_pipeline_log(),
         data_source=source,
         severity=severity,
         query=query,

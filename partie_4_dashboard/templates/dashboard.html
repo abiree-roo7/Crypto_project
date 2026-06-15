@@ -376,6 +376,24 @@
       font-size: 18px;
     }
 
+    .log-panel {
+      margin-bottom: 14px;
+    }
+
+    .log-window {
+      margin: 0;
+      max-height: 230px;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      background: #17202c;
+      color: #d7f4df;
+      padding: 14px 16px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
     .side-list {
       padding: 8px 16px 14px;
     }
@@ -497,6 +515,12 @@
       <input name="q" value="{{ query }}" placeholder="Search IP, SNI, JA3, alert type">
       <button type="submit">Apply</button>
     </form>
+
+    <section class="panel log-panel">
+      <h2>Pipeline Run Log</h2>
+      <pre class="log-window">{% for line in run_log %}{{ line }}
+{% endfor %}</pre>
+    </section>
 
     <section class="content">
       <div class="panel">

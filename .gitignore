@@ -15,5 +15,6 @@ keys/
 *.pem
 alerts.db
 uploads/
+pipeline_run.log
 capture_test.pcap
 capture_test.pcapng

@@ -162,6 +162,7 @@ The dashboard can:
 - summarize top source IPs
 - download the signed report, raw alerts, and extracted sessions
 - clear runtime data for a fresh demo
+- show a backend pipeline run log for video demonstrations
 
 Data source priority:
 
