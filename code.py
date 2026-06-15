@@ -7,6 +7,8 @@ from pathlib import Path
 
 from partie2_moteursoc.detector import TLSDetector
 
+BASE_DIR = Path(__file__).resolve().parent
+
 
 def preload_stdlib_code_module():
     """
@@ -54,7 +56,7 @@ def sign_and_store_alerts(alerts, export_report_path=None):
             "'python -m pip install -r requirements.txt' before using --store."
         ) from exc
 
-    keys_dir = Path("keys")
+    keys_dir = BASE_DIR / "keys"
     if not (keys_dir / "private_key.pem").exists() or not (keys_dir / "public_key.pem").exists():
         generate_keys()
 

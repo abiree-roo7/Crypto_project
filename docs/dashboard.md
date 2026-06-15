@@ -53,6 +53,17 @@ The dashboard currently shows:
 - top source IP summary
 - severity filter
 - text search
+- PCAP/PCAPNG upload
+- end-to-end pipeline run from the browser
+
+## Run a Capture From the Dashboard
+
+1. Start the dashboard.
+2. Open `http://127.0.0.1:5000/`.
+3. Choose a `.pcap`, `.pcapng`, or `.cap` file.
+4. Select `Run pipeline`.
+
+The dashboard saves the uploaded capture under `uploads/`, runs the same pipeline as `code.py`, writes `sessions_tls.json`, `alerts.json`, `alerts.db`, and `report.json`, then reloads the alert view.
 
 ## Future Improvements
 
@@ -64,5 +75,3 @@ Recommended improvements for the final dashboard:
 - severity charts
 - JA3/JA3S search
 - source/destination IP drilldown
-- upload form for PCAP files
-- button to run the IDS pipeline from the dashboard

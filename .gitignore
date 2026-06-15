@@ -14,5 +14,6 @@ part3_signature/keys/
 keys/
 *.pem
 alerts.db
+uploads/
 capture_test.pcap
 capture_test.pcapng

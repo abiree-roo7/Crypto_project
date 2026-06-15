@@ -1,8 +1,9 @@
 import sqlite3
 import json
 from datetime import datetime
+from pathlib import Path
 
-DB_PATH = "alerts.db"
+DB_PATH = Path(__file__).resolve().parents[1] / "alerts.db"
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)

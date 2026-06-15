@@ -69,6 +69,17 @@ Open:
 http://127.0.0.1:5000/
 ```
 
+From the dashboard, upload a `.pcap`, `.pcapng`, or `.cap` file and select `Run pipeline` to execute the full IDS flow from the browser. The app creates or updates:
+
+```text
+sessions_tls.json
+alerts.json
+alerts.db
+report.json
+keys/private_key.pem
+keys/public_key.pem
+```
+
 ## Typical Full Workflow
 
 ```powershell
