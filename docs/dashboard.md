@@ -45,6 +45,7 @@ If `report.json` exists, it is used first because it contains the signed report 
 The dashboard currently shows:
 
 - total alert count
+- session count from the latest capture
 - critical alert count
 - warning alert count
 - info alert count
@@ -55,6 +56,9 @@ The dashboard currently shows:
 - text search
 - PCAP/PCAPNG upload
 - end-to-end pipeline run from the browser
+- signed report download
+- alerts and sessions JSON downloads
+- runtime data reset for clean demos
 
 ## Run a Capture From the Dashboard
 
@@ -64,6 +68,18 @@ The dashboard currently shows:
 4. Select `Run pipeline`.
 
 The dashboard saves the uploaded capture under `uploads/`, runs the same pipeline as `code.py`, writes `sessions_tls.json`, `alerts.json`, `alerts.db`, and `report.json`, then reloads the alert view.
+
+By default, `Start with a clean report` is enabled. This clears old runtime outputs before analyzing the uploaded capture, so a new Wireshark test produces a fresh report instead of appending to previous demo data.
+
+After a successful run, use the `Report Downloads` panel to download:
+
+```text
+tls_ids_report.json
+tls_ids_alerts.json
+tls_ids_sessions.json
+```
+
+Use `Clear runtime data` to reset the local dashboard outputs before another demo.
 
 ## Future Improvements
 

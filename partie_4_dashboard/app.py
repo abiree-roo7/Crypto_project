@@ -21,7 +21,7 @@ def preload_stdlib_code_module():
 
 preload_stdlib_code_module()
 
-from flask import Flask, flash, redirect, render_template, render_template_string, request, url_for
+from flask import Flask, flash, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
 
 
@@ -32,6 +32,7 @@ REPORT_JSON = BASE_DIR / "report.json"
 ALERTS_DB = BASE_DIR / "alerts.db"
 UPLOAD_DIR = BASE_DIR / "uploads"
 ALLOWED_CAPTURE_EXTENSIONS = {".pcap", ".pcapng", ".cap"}
+RUNTIME_OUTPUTS = (SESSIONS_JSON, ALERTS_JSON, REPORT_JSON, ALERTS_DB)
 
 app = Flask(__name__)
 app.secret_key = "tls-ids-local-dashboard"
@@ -60,6 +61,17 @@ def run_pipeline_for_capture(capture_path):
         "stored": len(stored_alerts),
         "capture": capture_path.name,
     }
+
+
+def clear_runtime_outputs():
+    for path in RUNTIME_OUTPUTS:
+        if path.exists():
+            path.unlink()
+
+    if UPLOAD_DIR.exists():
+        for item in UPLOAD_DIR.iterdir():
+            if item.is_file():
+                item.unlink()
 
 
 def _load_json(path):
@@ -142,6 +154,35 @@ def build_stats(alerts):
         "severity_counts": dict(severity_counts),
         "type_counts": type_counts.most_common(6),
         "top_sources": sources.most_common(5),
+    }
+
+
+def build_artifact_status():
+    sessions = _load_json(SESSIONS_JSON) or []
+    report = _load_json(REPORT_JSON)
+    report_info = report.get("report", {}) if isinstance(report, dict) else {}
+
+    artifacts = []
+    for label, path, endpoint in (
+        ("Signed report", REPORT_JSON, "download_report"),
+        ("Alerts JSON", ALERTS_JSON, "download_alerts"),
+        ("Sessions JSON", SESSIONS_JSON, "download_sessions"),
+    ):
+        artifacts.append(
+            {
+                "label": label,
+                "exists": path.exists(),
+                "size": path.stat().st_size if path.exists() else 0,
+                "endpoint": endpoint,
+            }
+        )
+
+    return {
+        "sessions": len(sessions) if isinstance(sessions, list) else 0,
+        "report_generated_at": report_info.get("generated_at"),
+        "report_total_alerts": report_info.get("total_alerts"),
+        "artifacts": artifacts,
+        "database_exists": ALERTS_DB.exists(),
     }
 
 
@@ -520,6 +561,7 @@ def dashboard():
         "dashboard.html",
         alerts=filtered,
         stats=build_stats(alerts),
+        artifacts=build_artifact_status(),
         data_source=source,
         severity=severity,
         query=query,
@@ -544,6 +586,11 @@ def run_capture():
     uploaded.save(capture_path)
 
     try:
+        if request.form.get("fresh_run") == "1":
+            clear_runtime_outputs()
+            UPLOAD_DIR.mkdir(exist_ok=True)
+            uploaded.stream.seek(0)
+            uploaded.save(capture_path)
         result = run_pipeline_for_capture(capture_path)
     except Exception as exc:
         flash(f"Pipeline failed: {exc}")
@@ -553,6 +600,37 @@ def run_capture():
         "Pipeline complete for {capture}: {sessions} session(s), "
         "{alerts} alert(s), {stored} stored alert(s).".format(**result)
     )
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/download/report")
+def download_report():
+    if not REPORT_JSON.exists():
+        flash("No report.json is available yet. Run the pipeline first.")
+        return redirect(url_for("dashboard"))
+    return send_file(REPORT_JSON, as_attachment=True, download_name="tls_ids_report.json")
+
+
+@app.route("/download/alerts")
+def download_alerts():
+    if not ALERTS_JSON.exists():
+        flash("No alerts.json is available yet. Run the pipeline first.")
+        return redirect(url_for("dashboard"))
+    return send_file(ALERTS_JSON, as_attachment=True, download_name="tls_ids_alerts.json")
+
+
+@app.route("/download/sessions")
+def download_sessions():
+    if not SESSIONS_JSON.exists():
+        flash("No sessions_tls.json is available yet. Run the pipeline first.")
+        return redirect(url_for("dashboard"))
+    return send_file(SESSIONS_JSON, as_attachment=True, download_name="tls_ids_sessions.json")
+
+
+@app.route("/reset", methods=["POST"])
+def reset_runtime_data():
+    clear_runtime_outputs()
+    flash("Runtime data cleared. Upload a capture to start a fresh analysis.")
     return redirect(url_for("dashboard"))
 
 

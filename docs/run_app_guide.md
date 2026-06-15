@@ -152,12 +152,16 @@ The dashboard can:
 
 - upload `.pcap`, `.pcapng`, and `.cap` files
 - run the full IDS pipeline from the browser
+- start each analysis with a clean report
 - show total, critical, warning, and info alert counts
+- show the number of extracted sessions
 - show alert queue rows with severity, rule, flow, timestamp, SNI, and JA3
 - filter by severity
 - search across IPs, SNI, JA3, rule names, and alert details
 - summarize alert types
 - summarize top source IPs
+- download the signed report, raw alerts, and extracted sessions
+- clear runtime data for a fresh demo
 
 Data source priority:
 
@@ -168,6 +172,8 @@ Data source priority:
 ```
 
 If `report.json` exists, the dashboard uses it first because it contains signed report output from Part 3.
+
+For a real Wireshark test, keep `Start with a clean report` checked before selecting `Analyze capture`. After the run finishes, download `tls_ids_report.json` from the `Report Downloads` panel.
 
 ## 8. Test With a Real Capture
 
