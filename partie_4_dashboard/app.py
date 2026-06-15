@@ -21,7 +21,7 @@ def preload_stdlib_code_module():
 
 preload_stdlib_code_module()
 
-from flask import Flask, flash, redirect, render_template_string, request, url_for
+from flask import Flask, flash, redirect, render_template, render_template_string, request, url_for
 from werkzeug.utils import secure_filename
 
 
@@ -516,8 +516,8 @@ def dashboard():
     query = request.args.get("q", "").strip()
     filtered = filter_alerts(alerts, severity, query)
 
-    return render_template_string(
-        TEMPLATE,
+    return render_template(
+        "dashboard.html",
         alerts=filtered,
         stats=build_stats(alerts),
         data_source=source,

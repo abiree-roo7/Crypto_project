@@ -1,113 +1,455 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard SOC - Analyseur TLS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; }
-        .table { color: #e2e8f0; }
-        .badge-critical { background-color: #ef4444; }
-        .badge-warning { background-color: #f59e0b; }
-        .badge-info { background-color: #3b82f6; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TLS IDS Dashboard</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --ink: #171b22;
+      --muted: #677284;
+      --line: #d9dfe8;
+      --green: #176b4d;
+      --green-soft: #e8f5ee;
+      --red: #b42318;
+      --red-soft: #fdebea;
+      --amber: #9a5b00;
+      --amber-soft: #fff4df;
+      --blue: #1261a6;
+      --blue-soft: #e8f3ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing: 0;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .subhead {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #b9dbc8;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green);
+      padding: 7px 11px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    main { padding: 18px 0 34px; }
+
+    .flash {
+      margin-bottom: 14px;
+      border: 1px solid #b9dbc8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 13px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .metric {
+      min-height: 88px;
+      padding: 14px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .workbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .upload {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .upload label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .upload input,
+    .filters input,
+    .filters select {
+      height: 40px;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 11px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .upload input[type="file"] {
+      padding: 7px;
+      color: var(--muted);
+    }
+
+    .upload input[type="file"]::file-selector-button {
+      height: 26px;
+      margin-right: 10px;
+      border: 1px solid #b9dbc8;
+      border-radius: 5px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button {
+      height: 40px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 14px;
+      background: var(--green);
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 15px;
+    }
+
+    .panel-note {
+      padding: 0 16px 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+      word-break: break-word;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      background: var(--panel-soft);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-width: 66px;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .critical { color: var(--red); background: var(--red-soft); }
+    .warning { color: var(--amber); background: var(--amber-soft); }
+    .info { color: var(--blue); background: var(--blue-soft); }
+    .unknown { color: var(--muted); background: #eef1f5; }
+
+    .flow {
+      font-weight: 700;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .side-list {
+      padding: 8px 16px 14px;
+    }
+
+    .side-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .side-row:last-child { border-bottom: 0; }
+    .side-row span:first-child { color: var(--muted); }
+    .side-row strong { text-align: right; }
+
+    .source-box {
+      padding: 14px 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .source-box strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 18px;
+    }
+
+    .empty {
+      padding: 32px 16px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .topbar,
+      .workbar,
+      .grid,
+      .upload,
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
 </head>
 <body>
-
-    <div class="container my-5">
-        <div class="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-secondary">
-            <h1> Centre de Contrôle TLS (SOC)</h1>
-            <span class="badge bg-success p-2">● Serveur Live</span>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-5">
-                <div class="card p-4 h-100">
-                    <h3 class="h5 mb-4 text-center text-white">Répartition des Risques</h3>
-                    <div style="max-width: 300px; margin: 0 auto;">
-                        <canvas id="monGraphique"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-7">
-                <div class="card p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="h5 m-0">Alertes Temps Réel</h3>
-                        <a href="/api/alertes" target="_blank" class="btn btn-sm btn-outline-info">Voir l'API brute JSON</a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Sévérité</th>
-                                    <th>Source</th>
-                                    <th>Message</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableau-alertes">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <header>
+    <div class="wrap topbar">
+      <div>
+        <h1>TLS IDS Dashboard</h1>
+        <div class="subhead">PCAP extraction, TLS detection, signed storage, and report review</div>
+      </div>
+      <div class="status"><span class="dot"></span>Local server live</div>
     </div>
+  </header>
 
-    <script>
-        // 1. Récupérer les données JSON de notre API Flask
-        fetch('/api/alertes')
-            .then(response => response.json())
-            .then(data => {
-                
-                // --- PARTIE A : REMPLIR LE TABLEAU HTML ---
-                const tbody = document.getElementById('tableau-alertes');
-                let nbCritical = 0, nbWarning = 0, nbInfo = 0;
+  <main class="wrap">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-                data.forEach(alerte => {
-                    // On compte pour le graphique
-                    if(alerte.severite === 'critical') nbCritical++;
-                    if(alerte.severite === 'warning') nbWarning++;
-                    if(alerte.severite === 'info') nbInfo++;
+    <section class="summary">
+      <div class="metric"><span>Total alerts</span><strong>{{ stats.total }}</strong></div>
+      <div class="metric"><span>Critical</span><strong>{{ stats.critical }}</strong></div>
+      <div class="metric"><span>Warning</span><strong>{{ stats.warning }}</strong></div>
+      <div class="metric"><span>Info</span><strong>{{ stats.info }}</strong></div>
+    </section>
 
-                    // On crée une ligne de tableau avec un badge de couleur
-                    let badgeClass = 'badge-' + alerte.severite;
-                    let row = `
-                        <tr>
-                            <td><strong>#${alerte.id}</strong></td>
-                            <td><span class="badge ${badgeClass}">${alerte.severite.toUpperCase()}</span></td>
-                            <td><code>${alerte.ip_source}</code></td>
-                            <td>${alerte.message}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
+    <section class="workbar">
+      <form class="panel upload" method="post" action="{{ url_for('run_capture') }}" enctype="multipart/form-data">
+        <div>
+          <label for="capture">Capture file</label>
+          <input id="capture" name="capture" type="file" accept=".pcap,.pcapng,.cap">
+        </div>
+        <button type="submit">Run pipeline</button>
+      </form>
 
-                // --- PARTIE B : CRÉER LE GRAPHIQUE CHART.JS ---
-                const ctx = document.getElementById('monGraphique').getContext('2d');
-                new Chart(ctx, {
-                    type: 'doughnut', // Type de graphique en anneau
-                    data: {
-                        labels: ['Critical', 'Warning', 'Info'],
-                        datasets: [{
-                            data: [nbCritical, nbWarning, nbInfo],
-                            backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { labels: { color: '#e2e8f0' } }
-                        }
-                    }
-                });
+      <form class="panel filters" method="get">
+        <select name="severity" aria-label="Severity">
+          <option value="">All severities</option>
+          {% for option in ["critical", "warning", "info"] %}
+            <option value="{{ option }}" {% if severity == option %}selected{% endif %}>{{ option|title }}</option>
+          {% endfor %}
+        </select>
+        <input name="q" value="{{ query }}" placeholder="Search IP, SNI, JA3, alert type">
+        <button type="submit">Apply</button>
+      </form>
+    </section>
 
-            })
-            .catch(error => console.error("Erreur lors du chargement des données API :", error));
-    </script>
+    <section class="grid">
+      <div class="panel">
+        <h2>Alert Queue</h2>
+        <div class="panel-note">Showing alerts from {{ data_source }}. Use the filters above to narrow the queue.</div>
+        {% if alerts %}
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 110px;">Severity</th>
+                <th style="width: 180px;">Rule</th>
+                <th>Flow</th>
+                <th>Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for alert in alerts %}
+                {% set severity_name = alert.get("severity", "unknown") %}
+                {% set details = alert.get("details", {}) %}
+                <tr>
+                  <td><span class="badge {{ severity_name }}">{{ severity_name }}</span></td>
+                  <td>{{ alert.get("alert_type") or alert.get("rule") or "unknown" }}</td>
+                  <td>
+                    <div class="flow">
+                      {{ alert.get("source_ip") or alert.get("src_ip") or "unknown" }}
+                      -> {{ alert.get("dest_ip") or alert.get("dst_ip") or "unknown" }}
+                    </div>
+                    <div class="meta">{{ alert.get("timestamp", "") }}</div>
+                  </td>
+                  <td>
+                    {{ details.get("message") or alert.get("description") or "" }}
+                    <div class="meta">
+                      SNI: {{ details.get("sni") or "N/A" }} |
+                      JA3: {{ details.get("ja3") or alert.get("ja3") or "N/A" }}
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty">No alerts found. Run a capture or clear the current filter.</div>
+        {% endif %}
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <div class="source-box">
+            <strong>{{ data_source }}</strong>
+            Current data source. Signed reports are preferred, then alert JSON, then SQLite.
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Alert Types</h2>
+          <div class="side-list">
+            {% for name, count in stats.type_counts %}
+              <div class="side-row"><span>{{ name }}</span><strong>{{ count }}</strong></div>
+            {% else %}
+              <div class="side-row"><span>No data</span><strong>0</strong></div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Top Sources</h2>
+          <div class="side-list">
+            {% for name, count in stats.top_sources %}
+              <div class="side-row"><span>{{ name }}</span><strong>{{ count }}</strong></div>
+            {% else %}
+              <div class="side-row"><span>No data</span><strong>0</strong></div>
+            {% endfor %}
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
 </body>
 </html>
